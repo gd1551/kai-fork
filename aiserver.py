@@ -459,7 +459,7 @@ class ImportBuffer:
 
         for i in range(len(self.world_infos)):
             for key in ["content", "comment"]:
-                self.world_infos[i][key] = self._replace_placeholders(self.world_infos[i][key])
+                self.world_infos[i][key] = self._replace_placeholders(self.world_infos[i][key], ph_ids)
 
     def from_club(self, club_id):
         # Maybe it is a better to parse the NAI Scenario (if available), it has more data
