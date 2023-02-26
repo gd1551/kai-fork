@@ -7297,13 +7297,57 @@ async function screenshot_selection(summonEvent) {
 	await showScreenshotWizard(actionComposition, startDebt=startDebt, endDebt=endDebt, totalText);
 }
 
+function saveSelection() {
+    if (window.getSelection) {
+        sel = window.getSelection();
+        if (sel.getRangeAt && sel.rangeCount) {
+            return sel.getRangeAt(0);
+        }
+    } else if (document.selection && document.selection.createRange) {
+        return document.selection.createRange();
+    }
+    return null;
+}
+
+function restoreSelection(range) {
+    if (range) {
+        if (window.getSelection) {
+            sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        } else if (document.selection && range.select) {
+            range.select();
+        }
+    }
+}
+
+function insertTextAtCaret(text) {
+    var sel, range;
+    if (window.getSelection) {
+        sel = window.getSelection();
+        if (sel.getRangeAt && sel.rangeCount) {
+            range = sel.getRangeAt(0);
+            range.deleteContents();
+            range.insertNode( document.createTextNode(text) );
+        }
+    } else if (document.selection && document.selection.createRange) {
+        document.selection.createRange().text = text;
+    }
+}
+
 $el("#gamescreen").addEventListener("paste", function(event) {
 	// Get rid of rich text, it messes with actions. Not a great fix since it
 	// relies on execCommand but it'll have to do
 	event.preventDefault();
-	document.execCommand(
-		"insertHTML",
-		false,
-		event.clipboardData.getData("text/plain")
-	);
+	if (selected_game_chunk != null) {
+		const sel = saveSelection()
+		insertTextAtCaret(event.clipboardData.getData("text/plain"));
+		restoreSelection(sel);
+
+		if (selected_game_chunk.id == 'story_prompt') {
+			edit_game_text(-1);
+		} else {
+			edit_game_text(parseInt(selected_game_chunk.getAttribute("chunk")));
+		}
+	}
 });
