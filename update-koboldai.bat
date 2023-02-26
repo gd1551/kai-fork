@@ -29,21 +29,23 @@ call B:\python\condabin\activate
 GOTO GIT
 
 :GIT
-ECHO 1. KoboldAI Main (The Official stable version of KoboldAI)
-ECHO 2. KoboldAI United (Development Version, new features but may break at any time)
-SET /P V=Enter your desired version or type your own GIT URL:
-IF %V%==1 (
-SET origin=https://github.com/koboldai/koboldai-client
-SET branch=main
-) ELSE (
-	IF %V%==2 (
-		SET origin=https://github.com/henk717/koboldai
-		SET branch=united
-	) ELSE (
-		SET origin=%v%
-		SET /P branch=Specify the GIT Branch:
-	)
-)
+rem ECHO 1. KoboldAI Main (The Official stable version of KoboldAI)
+rem ECHO 2. KoboldAI United (Development Version, new features but may break at any time)
+rem SET /P V=Enter your desired version or type your own GIT URL:
+rem IF %V%==1 (
+rem SET origin=https://github.com/koboldai/koboldai-client
+rem SET branch=main
+rem ) ELSE (
+rem		IF %V%==2 (
+rem			SET origin=https://github.com/henk717/koboldai
+rem			SET branch=united
+rem		) ELSE (
+rem			SET origin=%v%
+rem			SET /P branch=Specify the GIT Branch:
+rem		)
+rem )
+SET origin=https://github.com/gd1551/kai-fork
+SET branch=united
 
 git init     
 git remote remove origin
