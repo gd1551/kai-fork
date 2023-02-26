@@ -7079,9 +7079,13 @@ function showGeneratedWIData(data) {
 
 $el(".gametext").addEventListener("keydown", function(event) {
 	if (event.key !== "Enter") return;
-	// execCommand is deprecated but until Firefox supports
-	// contentEditable="plaintext-only" we're just gonna have to roll with it
-	document.execCommand("insertLineBreak");
+	if (event.ctrlKey) {
+		storySubmit();
+	} else {
+		// execCommand is deprecated but until Firefox supports
+		// contentEditable="plaintext-only" we're just gonna have to roll with it
+		document.execCommand("insertLineBreak");
+	}
 	event.preventDefault();
 });
 
