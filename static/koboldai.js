@@ -156,6 +156,7 @@ const shortcuts = [
 	{mod: "ctrl", key: "l", desc: '"Lock" screen (Not secure)', func: () => socket.emit("privacy_mode", {'enabled': true})},
 	{mod: "ctrl", key: "k", desc: "Finder", func: open_finder},
 	{mod: "ctrl", key: "/", desc: "Help screen", func: () => openPopup("shortcuts-popup")},
+	{mod: "ctrl", key: "Enter", desc: "Submit (generate)", func: storySubmit}
 ]
 
 const chat = {
@@ -3018,7 +3019,7 @@ function toggle_adventure_mode(button) {
 }
 
 function select_game_text(event) {
-	if (!((event === null) || ["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(event.code))) return;
+	if (!((event === null) || !event.code.startsWith("Key"))) return;
 
 	let anchorNode = window.getSelection().anchorNode;
 	let new_selected_game_chunk = null;
