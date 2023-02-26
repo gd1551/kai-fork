@@ -1,1 +1,1 @@
-#welcome_text { display:none; pointer-events: none }
+#welcome_text { display:none!important; pointer-events: none }
