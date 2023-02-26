@@ -43,3 +43,4 @@ dependencies:
     - ftfy
     - pydub
     - diffusers
+    - tiktoken

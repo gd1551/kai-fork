@@ -80,6 +80,8 @@ except:
 
 from transformers import GenerationMixin
 
+import tiktoken
+
 # Text2img
 import base64
 from PIL import Image
@@ -2094,9 +2096,11 @@ def patch_transformers_download():
 
     transformers.utils.hub.http_get = http_get
     
+PhraseBiasLogitsProcessorGlobal = None
 
 def patch_transformers():
     global transformers
+    global PhraseBiasLogitsProcessorGlobal
     
     patch_transformers_download()
     
@@ -2343,6 +2347,7 @@ def patch_transformers():
 
             return scores
 
+    PhraseBiasLogitsProcessorGlobal = PhraseBiasLogitsProcessor
 
     class LuaLogitsProcessor(LogitsProcessor):
 
@@ -2862,7 +2867,7 @@ def load_model(use_gpu=True, gpu_layers=None, disk_layers=None, initial_load=Fal
             ).json()["result"]
         else:
             tokenizer_id = {
-                "Colab": "EleutherAI/gpt-neo-2.7B",
+                "Colab": "tiktoken-cl100k_dv",
                 "CLUSTER": koboldai_vars.cluster_requested_models[0] if len(koboldai_vars.cluster_requested_models) > 0 else "gpt2",
                 "OAI": "gpt2",
             }[koboldai_vars.model]
@@ -2878,7 +2883,50 @@ def load_model(use_gpu=True, gpu_layers=None, disk_layers=None, initial_load=Fal
         
         print(tokenizer_id, koboldai_vars.newlinemode)
 
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, revision=koboldai_vars.revision, cache_dir="cache")
+        if tokenizer_id.startswith("tiktoken-"):
+            class AutoTokenizerLikeTikToken:
+                def __init__(self, tokenizer):
+                    self.tokenizer = tokenizer
+                def decode(self, tokens):
+                    if isinstance(tokens, int):
+                        tokens=[tokens]
+                    return self.tokenizer.decode(tokens)
+                def encode(self, text):
+                    return self.tokenizer.encode(text, disallowed_special=())
+                def get_vocab(self):
+                    return self.tokenizer._mergeable_ranks
+            tokenizer_id = tokenizer_id[9:]
+            print("tiktoken tokenizer", tokenizer_id)
+            cl100k_base = tiktoken.get_encoding("cl100k_base")
+            if tokenizer_id == "cl100k_im":
+                tokenizer = tiktoken.Encoding(
+                    name="cl100k_im",
+                    pat_str=cl100k_base._pat_str,
+                    mergeable_ranks=cl100k_base._mergeable_ranks,
+                    special_tokens={
+                        **cl100k_base._special_tokens,
+                        "<|im_start|>": 100264,
+                        "<|im_end|>": 100265,
+                    }
+                )
+            elif tokenizer_id == "cl100k_dv":
+                tokenizer = tiktoken.Encoding(
+                    name="cl100k_dv",
+                    pat_str=cl100k_base._pat_str,
+                    mergeable_ranks=cl100k_base._mergeable_ranks,
+                    special_tokens={
+                        "<|startoftext|>": 100256,
+                        "<|endoftext|>": 100257,
+                        "<|im_start|>": 100264,
+                        "<|im_end|>": 100265,
+                    }
+                )
+            else:
+                tokenizer = tiktoken.get_encoding(tokenizer_id)
+            tokenizer = AutoTokenizerLikeTikToken(tokenizer)
+            tokenizer._koboldai_header = tokenizer.encode("")
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, revision=koboldai_vars.revision, cache_dir="cache")
 
         loadsettings()
         koboldai_vars.colaburl = url or koboldai_vars.colaburl
@@ -5719,6 +5767,7 @@ def raw_generate(
                 prompt_tokens=prompt_tokens,
                 max_new=max_new,
                 batch_count=batch_count,
+                single_line=single_line,
                 gen_settings=gen_settings
             )
             result = GenerationResult(
@@ -5851,6 +5900,7 @@ def oai_raw_generate(
     max_new: int,
     batch_count: int,
     gen_settings: GenerationSettings,
+    single_line: bool
 ):
     # Taken mainly from oairequest()
 
@@ -5936,6 +5986,7 @@ def cluster_raw_generate(
     max_new: int,
     batch_count: int,
     gen_settings: GenerationSettings,
+    single_line: bool
 ):
     decoded_prompt = utils.decodenewlines(tokenizer.decode(prompt_tokens))
 
@@ -6057,11 +6108,15 @@ def colab_raw_generate(
     max_new: int,
     batch_count: int,
     gen_settings: GenerationSettings,
+    single_line: bool
 ):
     decoded_prompt = utils.decodenewlines(tokenizer.decode(prompt_tokens))
 
     # Store context in memory to use it for comparison with generated content
     koboldai_vars.lastctx = decoded_prompt
+
+    stream = koboldai_vars.output_streaming
+    show_logprobs = koboldai_vars.show_probs
     
     # Build request JSON data
     reqdata = {
@@ -6078,32 +6133,91 @@ def colab_raw_generate(
         'typical': gen_settings.typical,
         'topa': gen_settings.top_a,
         'numseqs': batch_count,
-        'retfultxt': False
+        'retfultxt': False,
+        'stream': stream,
+        'logprobs': 10 if show_logprobs else None,
     }
-    
+
+    bias_processor = PhraseBiasLogitsProcessorGlobal()
+    bias_list = bias_processor._get_biased_tokens(input_ids=prompt_tokens)
+    reqdata['logit_bias'] = bias_list
+
+    additional_bad_words_ids = [tokenizer.encode("\n")] if single_line else []
+    bad_words_ids = additional_bad_words_ids
+    if len(bad_words_ids) > 0:
+        for bad_word_id in bad_words_ids:
+            reqdata['logit_bias'][bad_word_id[0]] = -200
+
     # Create request
     req = requests.post(
-        koboldai_vars.colaburl, 
+        koboldai_vars.colaburl,
+        stream = stream,
         json = reqdata
     )
+
+    genout = [""]*batch_count
+
+    def set_logprobs(idx, logprobs):
+        token_prob_info = []
+        for token, score in logprobs["top_logprobs"][0].items():
+            token_prob_info.append({
+                "tokenId": tokenizer.encode(token),
+                "decoded": token,
+                "score": float(score),
+            })
+        if koboldai_vars.numseqs == 1:
+            koboldai_vars.actions.set_probabilities(token_prob_info)
+        else:
+            koboldai_vars.actions.set_option_probabilities(token_prob_info, idx)
     
     # Deal with the response
     if(req.status_code == 200):
-        js = req.json()["data"]
-        
-        # Try to be backwards compatible with outdated colab
-        if("text" in js):
-            genout = [getnewcontent(js["text"])]
+        if stream:
+            for line in req.iter_lines():
+                if not line: continue
+                line = line.decode("utf-8")
+                if not line.startswith("data:"):
+                    print("weird data", line)
+                    continue
+                line = line[6:]
+                if line == "done":
+                    tokenized = [tokenizer.encode(x) for x in genout]
+                    return np.array(tokenized)
+                try:
+                    [idx, token, logprobs] = json.loads(line)
+                    genout[idx] = genout[idx] + token
+                    temp = [""]*batch_count
+                    temp[idx] = token
+                    if show_logprobs and logprobs: set_logprobs(idx, logprobs)
+                    koboldai_vars.actions.stream_tokens(temp)
+                except Exception as e:
+                    print("data parse error", e)
         else:
-            genout = js["seqs"]
-        
-        return np.array([tokenizer.encode(x) for x in genout])
+            js = req.json()["data"]
+            
+            # Try to be backwards compatible with outdated colab
+            if("text" in js):
+                genout = [getnewcontent(js["text"])]
+            else:
+                genout = js["seqs"]
+            
+            tokenized = []
+            for i in range(len(genout)):
+                gen = genout[i]
+                if show_logprobs:
+                    set_logprobs(i, gen[1])
+                    text = gen[0]
+                else:
+                    text = gen
+                tokenized += [tokenizer.encode(text)]
+            return np.array(tokenized)
 
 def api_raw_generate(
     prompt_tokens: List[int],
     max_new: int,
     batch_count: int,
     gen_settings: GenerationSettings,
+    single_line: bool
 ):
     decoded_prompt = utils.decodenewlines(tokenizer.decode(prompt_tokens))
 
