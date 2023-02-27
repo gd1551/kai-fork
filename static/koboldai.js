@@ -495,9 +495,9 @@ function process_actions_data(data) {
 	}
 	
 	clearTimeout(game_text_scroll_timeout);
-	game_text_scroll_timeout = setTimeout(run_infinite_scroll_update.bind(null, action_type, actions, first_action), 10);
+	game_text_scroll_timeout = setTimeout(run_infinite_scroll_update.bind(null, action_type, actions, first_action), 0);
 	clearTimeout(auto_loader_timeout);
-	
+
 	
 	hide_show_prompt();
 	//console.log("Took "+((Date.now()-start_time)/1000)+"s to process");
