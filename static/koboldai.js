@@ -2881,7 +2881,10 @@ function save_as_story(response) {
 	if (response === "overwrite?") openPopup("save-confirm");
 }
 
+let do_save_bias = true;
 function save_bias() {
+	if (!do_save_bias) return;
+
 	var biases = {};
 	//get all of our biases
 
@@ -3792,12 +3795,14 @@ function do_biases(data) {
 
 	// Clear out our old bias cards, weird recursion because remove sometimes
 	// doesn't work (???)
+	do_save_bias = false;
 	const biasContainer = $el("#bias-container");
 	for (let i=0;i<10000;i++) {
 		if (!biasContainer.firstChild) break;
 		biasContainer.firstChild.remove();
 	}
 	if(biasContainer.firstChild) reportError("We are doomed", "Undead zombie bias, please report this");
+	do_save_bias = true;
 
 	//add our bias lines
 	for (const [key, value] of Object.entries(data.value)) {
