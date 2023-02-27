@@ -3141,6 +3141,7 @@ function update_game_text(id) {
 	let new_text = ""
 	if (id == -1) {
 		temp = document.getElementById("story_prompt");
+		if (!temp) return;
 		new_text = temp.innerText;
 		sync_to_server(temp);
 		temp.original_text = new_text;
