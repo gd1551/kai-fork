@@ -8612,7 +8612,7 @@ def UI_2_save_story(data):
         #We have an ack that it's OK to save over the file if one exists
         koboldai_vars.save_story()
 
-def directory_to_zip_data(directory: str, overrides: Optional[dict]) -> bytes:
+def directory_to_zip_data(directory: str, overrides: Optional[dict]=None) -> bytes:
     overrides = overrides or {}
     buffer = BytesIO()
 
