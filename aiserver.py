@@ -6406,11 +6406,14 @@ def generate(txt, minimum, maximum, found_entries=None):
         set_aibusy(0)
         return
 
+    do_execute_outmod = False
     for i in range(koboldai_vars.numseqs):
-        koboldai_vars.lua_koboldbridge.generated[i+1][koboldai_vars.generated_tkns] = int(genout[i, -1].item())
-        koboldai_vars.lua_koboldbridge.outputs[i+1] = utils.decodenewlines(tokenizer.decode(genout[i, -already_generated:]))
+        if len(genout[i] > 0):
+            koboldai_vars.lua_koboldbridge.generated[i+1][koboldai_vars.generated_tkns] = int(genout[i, -1].item())
+            koboldai_vars.lua_koboldbridge.outputs[i+1] = utils.decodenewlines(tokenizer.decode(genout[i, -already_generated:]))
+            do_execute_outmod = True
 
-    execute_outmod()
+    if do_execute_outmod: execute_outmod()
     if(koboldai_vars.lua_koboldbridge.regeneration_required):
         koboldai_vars.lua_koboldbridge.regeneration_required = False
         genout = []
