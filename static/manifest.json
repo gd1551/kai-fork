@@ -1,0 +1,22 @@
+{
+  "short_name": "KoboldAI",
+  "name": "KoboldAI",
+  "start_url": "/new_ui",
+  "orientation": "portrait",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#ffffff",
+  "background_color": "#000000",
+  "icons": [
+    {
+      "src": "default_pfp.png",
+      "sizes": "512x512",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "default_pfp.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
