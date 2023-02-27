@@ -6977,6 +6977,7 @@ function imgGenRetry() {
 
 		storyReviewImg.src = "static/thinking.gif";
 		storyReviewImg.style["object-fit"] = "contain";
+		storyReviewImg.style["cursor"] = null;
 		$el("#story-review-author").innerText = "";
 		$el("#story-review-content").innerHTML = "";
 
@@ -6987,6 +6988,7 @@ function imgGenRetry() {
 	async function showStoryReview(data) {
 		// Story id is used to invalidate cache from other stories
 		storyReviewImg.style["object-fit"] = "cover";
+		storyReviewImg.style["cursor"] = "pointer";
 		storyReviewImg.src = `/get_wi_image/${data.uid}?${story_id}`;
 		$el("#story-review-author").innerText = data.who;
 		$el("#story-review-content").innerText = data.review;
