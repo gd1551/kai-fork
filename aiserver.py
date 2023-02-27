@@ -5737,7 +5737,8 @@ def raw_generate(
                 max_new=max_new,
                 batch_count=batch_count,
                 single_line=single_line,
-                gen_settings=gen_settings
+                gen_settings=gen_settings,
+                do_streaming=do_streaming
             )
             result = GenerationResult(
                 out_batches=batch_encoded, prompt=prompt_tokens, is_whole_generation=True, single_line=single_line
@@ -5869,7 +5870,8 @@ def oai_raw_generate(
     max_new: int,
     batch_count: int,
     gen_settings: GenerationSettings,
-    single_line: bool
+    single_line: bool,
+    do_streaming: bool
 ):
     # Taken mainly from oairequest()
 
@@ -5955,7 +5957,8 @@ def cluster_raw_generate(
     max_new: int,
     batch_count: int,
     gen_settings: GenerationSettings,
-    single_line: bool
+    single_line: bool,
+    do_streaming: bool
 ):
     decoded_prompt = utils.decodenewlines(tokenizer.decode(prompt_tokens))
 
@@ -6085,14 +6088,15 @@ def colab_raw_generate(
     max_new: int,
     batch_count: int,
     gen_settings: GenerationSettings,
-    single_line: bool
+    single_line: bool,
+    do_streaming: bool
 ):
     decoded_prompt = utils.decodenewlines(tokenizer.decode(prompt_tokens))
 
     # Store context in memory to use it for comparison with generated content
     koboldai_vars.lastctx = decoded_prompt
 
-    stream = koboldai_vars.output_streaming
+    stream = do_streaming
     show_logprobs = koboldai_vars.show_probs
     
     # Build request JSON data
@@ -6194,7 +6198,8 @@ def api_raw_generate(
     max_new: int,
     batch_count: int,
     gen_settings: GenerationSettings,
-    single_line: bool
+    single_line: bool,
+    do_streaming: bool
 ):
     decoded_prompt = utils.decodenewlines(tokenizer.decode(prompt_tokens))
 
