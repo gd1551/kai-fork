@@ -6970,9 +6970,23 @@ function imgGenRetry() {
 	const characterContainer = $el(".story-commentary-characters");
 	const settingsContainer = $el("#story-commentary-settings");
 	const storyReviewImg = $el("#story-review-img");
+	let storyReviewInProgress = false;
+
+	storyReviewImg.addEventListener("click", () => {
+		if (storyReviewInProgress) return;
+
+		storyReviewImg.src = "static/thinking.gif";
+		storyReviewImg.style["object-fit"] = "contain";
+		$el("#story-review-author").innerText = "";
+		$el("#story-review-content").innerHTML = "";
+
+		storyReviewInProgress = true;
+		socket.emit("new_story_review");
+	});
 
 	async function showStoryReview(data) {
 		// Story id is used to invalidate cache from other stories
+		storyReviewImg.style["object-fit"] = "cover";
 		storyReviewImg.src = `/get_wi_image/${data.uid}?${story_id}`;
 		$el("#story-review-author").innerText = data.who;
 		$el("#story-review-content").innerText = data.review;
@@ -6981,6 +6995,8 @@ function imgGenRetry() {
 
 		const textElement = document.getElementById("Selected Text");
 		textElement.scrollBy(0, textElement.scrollHeight);
+
+		storyReviewInProgress = false;
 	}
 	socket.on("show_story_review", showStoryReview);
 

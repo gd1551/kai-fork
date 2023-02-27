@@ -10219,6 +10219,9 @@ def maybe_review_story() -> None:
     if random.randrange(100) > koboldai_vars.commentary_chance:
         return
 
+    review_story(commentary_characters)
+
+def review_story(commentary_characters) -> None:
     char = random.choice(commentary_characters)
     speaker_uid = char["uid"]
     speaker_name = char["title"]
@@ -10257,6 +10260,17 @@ def maybe_review_story() -> None:
     out_text = out_text.strip()
     out_text = utils.trimincompletesentence(out_text)
     emit("show_story_review", {"who": speaker_name, "review": out_text, "uid": speaker_uid})
+
+@socketio.on("new_story_review")
+@logger.catch
+def UI_2_new_story_review():
+    commentary_characters = koboldai_vars.worldinfo_v2.get_commentators()
+    if not (
+        commentary_characters
+        and koboldai_vars.commentary_enabled
+    ):
+        return
+    review_story(commentary_characters)
 
 #==================================================================#
 # Get next 100 actions for infinate scroll
