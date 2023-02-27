@@ -7080,11 +7080,21 @@ function showGeneratedWIData(data) {
 $el(".gametext").addEventListener("keydown", function(event) {
 	if (event.key !== "Enter") return;
 	if (event.ctrlKey) {
-		storySubmit();
+		if (selected_game_chunk != null) {	
+			if (selected_game_chunk.id == 'story_prompt') {
+				edit_game_text(-1);
+			} else {
+				edit_game_text(parseInt(selected_game_chunk.getAttribute("chunk")));
+			}
+		}
+
+		detect_enter_submit(event);
+		return;
 	} else {
 		// execCommand is deprecated but until Firefox supports
 		// contentEditable="plaintext-only" we're just gonna have to roll with it
-		document.execCommand("insertLineBreak");
+		if (selected_game_chunk !== null)
+			document.execCommand("insertLineBreak");
 	}
 	event.preventDefault();
 });
@@ -7340,9 +7350,9 @@ $el("#gamescreen").addEventListener("paste", function(event) {
 	// relies on execCommand but it'll have to do
 	event.preventDefault();
 	if (selected_game_chunk != null) {
-		const sel = saveSelection()
+		// const sel = saveSelection();
 		insertTextAtCaret(event.clipboardData.getData("text/plain"));
-		restoreSelection(sel);
+		// restoreSelection(sel);
 
 		if (selected_game_chunk.id == 'story_prompt') {
 			edit_game_text(-1);
