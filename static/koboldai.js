@@ -228,9 +228,26 @@ function disconnect() {
 	document.getElementById("disconnect_message").classList.remove("hidden");
 }
 
+function ensureStoryPromptExists() {
+	let elem = document.getElementById("story_prompt");
+	if (!elem) {
+		elem = document.createElement("span");
+		elem.id = "story_prompt";
+		document.getElementById("Selected Text").prepend(elem);
+	}
+	for (const _class of ["var_sync_story_prompt","var_sync_alt_story_prompt_in_ai","rawtext","hidden"])
+		elem.classList.add(_class);
+	elem.setAttribute("chunk", "-1");
+}
+
 function storySubmit() {
 	disruptStoryState();
-	socket.emit('submit', {'data': document.getElementById('input_text').value, 'theme': document.getElementById('themetext').value});
+	const submitData = {'data': document.getElementById('input_text').value, 'theme': document.getElementById('themetext').value};
+	if (document.getElementById("Selected Text").getAttribute("contenteditable") === "false") {
+		ensureStoryPromptExists();
+		storyStarted();
+	}
+	socket.emit('submit', submitData);
 	document.getElementById('input_text').value = '';
 	document.getElementById('themetext').value = '';
 }
@@ -256,8 +273,8 @@ function disruptStoryState() {
 	$el("#story-review").classList.add("hidden");
 }
 
-function reset_story() {
-	console.log("Resetting story");
+function reset_story(clearStoryData = true) {
+	console.log("Resetting story", {clearStoryData});
 	disruptStoryState();
 	clearTimeout(calc_token_usage_timeout);
 	clearTimeout(game_text_scroll_timeout);
@@ -283,20 +300,21 @@ function reset_story() {
 	}
 	document.getElementById("Selected Text").setAttribute("contenteditable", "false");
 	
-	//clear any options
-	var option_area = document.getElementById("Select Options");
-	while (option_area.firstChild) {
-		option_area.removeChild(option_area.firstChild);
+	if (clearStoryData) {
+		//clear any options
+		var option_area = document.getElementById("Select Options");
+		while (option_area.firstChild) {
+			option_area.removeChild(option_area.firstChild);
+		}
+		
+		//clear world info
+		world_info_data = {};
+		world_info_folder({"root": []});
+		var world_info_area = document.getElementById("WI_Area");
+		while (world_info_area.firstChild) {
+			world_info_area.removeChild(world_info_area.firstChild);
+		}
 	}
-	
-	//clear world info
-	world_info_data = {};
-	world_info_folder({"root": []});
-	var world_info_area = document.getElementById("WI_Area");
-	while (world_info_area.firstChild) {
-		world_info_area.removeChild(world_info_area.firstChild);
-	}
-
 	
 	const storyPrompt = $el("#story_prompt");
 
@@ -315,6 +333,8 @@ function reset_story() {
 
 	$(".chat-message").remove();
 	addInitChatMessage();
+
+	socket.emit("reset_gamestarted");
 }
 
 function fix_text(val) {
@@ -596,6 +616,15 @@ function do_story_text_updates(action) {
 	}
 }
 
+function storyStarted() {
+	document.getElementById('input_text').placeholder = "Enter text here (shift+enter for new line)";
+	document.getElementById('themerow').classList.add("hidden");
+	document.getElementById('themetext').value = "";
+	document.getElementById("welcome_container").classList.add("hidden");
+	//enable editing
+	document.getElementById("Selected Text").setAttribute("contenteditable", "true");
+}
+
 function do_prompt(data) {
 	let full_text = "";
 	for (chunk of data.value) {
@@ -640,12 +669,7 @@ function do_prompt(data) {
 
 	//if we have a prompt we need to disable the theme area, or enable it if we don't
 	if (data.value[0].text != "") {
-		document.getElementById('input_text').placeholder = "Enter text here (shift+enter for new line)";
-		document.getElementById('themerow').classList.add("hidden");
-		document.getElementById('themetext').value = "";
-		document.getElementById("welcome_container").classList.add("hidden");
-		//enable editing
-		document.getElementById("Selected Text").setAttribute("contenteditable", "true");
+		storyStarted();
 	} else {
 		document.getElementById('input_text').placeholder = "Enter Prompt Here (shift+enter for new line)";
 		document.getElementById('input_text').disabled = false;
@@ -3097,10 +3121,15 @@ function edit_game_text(id) {
 	update_game_text(id)
 	//OK, now we need to go backwards and forwards until we find something that didn't change
 	
+	let thisElem = document.getElementById((id == -1) ? "story_prompt" : "Selected Text Chunk " + id);
+	let fieldEmpty = !thisElem || thisElem.textContent.length == 0;
+	let otherFieldsEmpty = true;
+
 	let check_id = id-1;
 	while (check_id >= 0) {
 		if (document.getElementById("Selected Text Chunk " + check_id)) {
 			let temp = document.getElementById("Selected Text Chunk " + check_id);
+			if (temp.textContent.length) otherFieldsEmpty = false;
 			if (temp.textContent == temp.original_text) {
 				break;
 			} else {
@@ -3113,6 +3142,7 @@ function edit_game_text(id) {
 	}
 	if (document.getElementById("story_prompt")) {
 		let temp = document.getElementById("story_prompt");
+		if (temp.textContent.length) otherFieldsEmpty = false;
 		if (temp.textContent != temp.original_text) {
 			update_game_text(-1);
 		}
@@ -3124,6 +3154,7 @@ function edit_game_text(id) {
 	while (check_id <= Math.max.apply(null,Object.keys(actions_data).map(Number))) {
 		if (document.getElementById("Selected Text Chunk " + check_id)) {
 			let temp = document.getElementById("Selected Text Chunk " + check_id);
+			if (temp.textContent.length) otherFieldsEmpty = false;
 			if (temp.textContent == temp.original_text) {
 				break;
 			} else {
@@ -3134,6 +3165,8 @@ function edit_game_text(id) {
 		}
 		check_id += 1;
 	}
+
+	if (fieldEmpty && otherFieldsEmpty) reset_story(false);
 }
 
 function update_game_text(id) {
@@ -6667,6 +6700,27 @@ function computeChatGametext(actionId) {
 	socket.emit("Set Selected Text", {id: actionId, text: text});
 	chat.lastEdit = actionId;
 }
+
+function gametextMutationObserverCallback(mutationList, observer) {
+	for (const mutation of mutationList) {
+		if (mutation.type === "childList") {
+			if (chat.useV2) return;
+			for (const addedNode of mutation.addedNodes) {
+				if (!["SPAN"].includes(addedNode.tagName)) {
+					addedNode.remove();
+					edit_game_text(-1); // sync with server because phantom elements usually mean desync
+				}
+			}
+		}
+	}
+}
+
+function installGametextMutationObserver() {
+	const storyArea = document.getElementById("Selected Text");
+	const observer = new MutationObserver(gametextMutationObserverCallback);
+	observer.observe(storyArea, { childList: true });
+}
+installGametextMutationObserver()
 
 function updateChatStyle() {
 	const storyArea = document.getElementById("Selected Text");

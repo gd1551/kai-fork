@@ -8724,8 +8724,22 @@ def UI_2_submit(data):
             actionsubmit(data['data'], actionmode=koboldai_vars.actionmode)
         else:
             actionsubmit(data['data'], actionmode=koboldai_vars.actionmode)
+
+#==================================================================#
+# Event triggered when user fully empties gametext
+#==================================================================#
+@socketio.on('reset_gamestarted')
+@logger.catch
+def UI_2_reset_gamestarted():
+    koboldai_vars.gamestarted = False
+    koboldai_vars.prompt = ""
+    koboldai_vars.actions.reset()
+    koboldai_vars.actions_metadata = []
+    koboldai_vars.lastact     = ""
+    koboldai_vars.submission  = ""
+    koboldai_vars.lastctx     = ""
  
- #==================================================================#
+#==================================================================#
 # Event triggered when user clicks the submit button
 #==================================================================#
 @socketio.on('abort')
