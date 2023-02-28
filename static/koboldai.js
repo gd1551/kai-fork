@@ -3906,6 +3906,7 @@ function update_context(data) {
 		wi.classList.remove("used_in_game");
 	}
 	
+	let colorCache = {};
 
 	for (const entry of data) {
 		let contextClass = "context-" + ({
@@ -3925,7 +3926,9 @@ function update_context(data) {
 			{classes: ["context-block", contextClass]}
 		);
 
-		let rgb = window.getComputedStyle(el)["background-color"].match(/(\d+), (\d+), (\d+)/).slice(1, 4).map(Number);
+		if (!colorCache[contextClass])
+			colorCache[contextClass] = window.getComputedStyle(el)["background-color"].match(/(\d+), (\d+), (\d+)/).slice(1, 4).map(Number);
+		let rgb = colorCache[contextClass];
 
 		for (const [tokenId, token] of entry.tokens) {
 			let tokenColor = distortColor(rgb);
@@ -3934,11 +3937,11 @@ function update_context(data) {
 			let tokenEl = $e("span", el, {
 				classes: ["context-token"],
 				"tooltip": tokenId === -1 ? "Soft" : tokenId,
-				innerText: token.replaceAll(String.fromCharCode(0), '<span class="material-icons-outlined context-symbol">dangerous</span>'),
+				innerText: token.split(String.fromCharCode(0)).join('<span class="material-icons-outlined context-symbol">dangerous</span>'),
 				"style.backgroundColor": tokenColor,
 			});
 
-			tokenEl.innerHTML = tokenEl.innerHTML.replaceAll("<br>", '<span class="material-icons-outlined context-symbol">keyboard_return</span>');
+			// tokenEl.innerHTML = tokenEl.innerHTML.replaceAll("<br>", '<span class="material-icons-outlined context-symbol">keyboard_return</span>');
 		}
 		document.getElementById("context-container").appendChild(el);
 		
