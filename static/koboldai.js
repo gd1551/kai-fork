@@ -879,7 +879,7 @@ function var_changed(data) {
 		}
 	//Special case for context viewer
 	} else if (data.classname == "story" && data.name == "context") {
-		setTimeout(update_context, 1, data.value);
+		update_context(data.value);
 	//special case for story_actionmode
 	} else if (data.classname == "story" && data.name == "actionmode") {
 		const button = document.getElementById('adventure_mode');
@@ -3886,29 +3886,15 @@ function recolorTokens() {
 	}
 }
 
-function update_context(data) {
-	$(".context-block").remove();
+let contextData = null;
 
-	let memory_length = 0;
-	let genre_length = 0;
-	let authors_notes_length = 0;
-	let prompt_length = 0;
-	let game_text_length = 0;
-	let world_info_length = 0;
-	let soft_prompt_length = 0;
-	let submit_length = 0;
-	
-	//clear out within_max_length class
-	for (action of document.getElementsByClassName("within_max_length")) {
-		action.classList.remove("within_max_length");
-	}
-	for (wi of document.getElementsByClassName("used_in_game")) {
-		wi.classList.remove("used_in_game");
-	}
-	
+function updateContextInViewer() {
+	$(".context-block").remove();
+	if (!contextData) return;
+
 	let colorCache = {};
 
-	for (const entry of data) {
+	for (const entry of contextData) {	
 		let contextClass = "context-" + ({
 			soft_prompt: "sp",
 			prompt: "prompt",
@@ -3944,7 +3930,38 @@ function update_context(data) {
 			// tokenEl.innerHTML = tokenEl.innerHTML.replaceAll("<br>", '<span class="material-icons-outlined context-symbol">keyboard_return</span>');
 		}
 		document.getElementById("context-container").appendChild(el);
-		
+	}
+}
+
+function update_context(data) {
+	$(".context-block").remove();
+
+	let memory_length = 0;
+	let genre_length = 0;
+	let authors_notes_length = 0;
+	let prompt_length = 0;
+	let game_text_length = 0;
+	let world_info_length = 0;
+	let soft_prompt_length = 0;
+	let submit_length = 0;
+	
+	//clear out within_max_length class
+	for (action of document.getElementsByClassName("within_max_length")) {
+		action.classList.remove("within_max_length");
+	}
+	for (wi of document.getElementsByClassName("used_in_game")) {
+		wi.classList.remove("used_in_game");
+	}
+
+	let contextViewer = $el("#context-viewer");
+	let contextViewerVisible = contextViewer && !contextViewer.classList.contains("hidden");
+
+	contextData = data;
+
+	if (contextViewerVisible)
+		updateContextInViewer();
+
+	for (const entry of data) {	
 		switch (entry.type) {
 			case 'soft_prompt':
 				soft_prompt_length += entry.tokens.length;

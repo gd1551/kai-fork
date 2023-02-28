@@ -123,7 +123,7 @@
 		</div>
 	</div>
 	<div id="token-breakdown-container" class="settings_footer" style="padding-top: 10px;">
-		<div class="token_breakdown" onclick='socket.emit("update_tokens", document.getElementById("input_text").value);openPopup("context-viewer");'>
+		<div class="token_breakdown" onclick='socket.emit("update_tokens", document.getElementById("input_text").value);openPopup("context-viewer");updateContextInViewer();'>
 			<div id="soft_prompt_tokens" style="width:0%; background-color: var(--context_colors_soft_prompt);"></div>
 			<div id="genre_tokens" style="width:40%; background-color: var(--context_colors_genre);"></div>
 			<div id="memory_tokens" style="width:40%; background-color: var(--context_colors_memory);"></div>
