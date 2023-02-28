@@ -1275,7 +1275,7 @@ class system_settings(settings):
         self.api_tokenizer_id = None
         self.port = 5000
         try:
-            import google.colab
+            # import google.colab
             self.on_colab = True
         except:
             self.on_colab = False
