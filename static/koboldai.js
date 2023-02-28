@@ -252,7 +252,7 @@ function storySubmit() {
 		socket.emit('submit', submitData);
 		document.getElementById('input_text').value = '';
 		document.getElementById('themetext').value = '';
-	}, 10);
+	}, 20);
 }
 
 function storyBack() {
