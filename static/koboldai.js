@@ -879,7 +879,7 @@ function var_changed(data) {
 		}
 	//Special case for context viewer
 	} else if (data.classname == "story" && data.name == "context") {
-		update_context(data.value);
+		setTimeout(update_context, 1, data.value);
 	//special case for story_actionmode
 	} else if (data.classname == "story" && data.name == "actionmode") {
 		const button = document.getElementById('adventure_mode');
