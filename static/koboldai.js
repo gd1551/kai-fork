@@ -333,8 +333,6 @@ function reset_story(clearStoryData = true) {
 
 	$(".chat-message").remove();
 	addInitChatMessage();
-
-	socket.emit("reset_gamestarted");
 }
 
 function fix_text(val) {
@@ -3121,7 +3119,7 @@ function edit_game_text(id) {
 	update_game_text(id)
 	//OK, now we need to go backwards and forwards until we find something that didn't change
 	
-	let thisElem = document.getElementById((id == -1) ? "story_prompt" : "Selected Text Chunk " + id);
+	let thisElem = document.getElementById((id === -1) ? "story_prompt" : "Selected Text Chunk " + id);
 	let fieldEmpty = !thisElem || thisElem.textContent.length == 0;
 	let otherFieldsEmpty = true;
 
@@ -3166,7 +3164,10 @@ function edit_game_text(id) {
 		check_id += 1;
 	}
 
-	if (fieldEmpty && otherFieldsEmpty) reset_story(false);
+	if (fieldEmpty && otherFieldsEmpty) {
+		reset_story(false);
+		socket.emit("reset_gamestarted");
+	}
 }
 
 function update_game_text(id) {
