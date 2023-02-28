@@ -6463,7 +6463,7 @@ function run_infinite_scroll_update(action_type, actions, first_action) {
 	const promptEl = $el("#story_prompt");
 	if (!promptEl) return;
 
-	if (action_type == "append") {
+	if (action_type == "append" || action_type == "update") {
 		if (document.getElementById('Selected Text Chunk '+actions[actions.length-1].id)) {
 			document.getElementById('Selected Text Chunk '+actions[actions.length-1].id).scrollIntoView(false);
 			document.getElementById("Selected Text").scrollBy(0, 25);
