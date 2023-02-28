@@ -245,7 +245,6 @@ function storySubmit() {
 	const submitData = {'data': document.getElementById('input_text').value, 'theme': document.getElementById('themetext').value};
 	if (document.getElementById("Selected Text").getAttribute("contenteditable") === "false") {
 		ensureStoryPromptExists();
-		storyStarted();
 	}
 	socket.emit('submit', submitData);
 	document.getElementById('input_text').value = '';
