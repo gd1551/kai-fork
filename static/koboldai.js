@@ -241,18 +241,14 @@ function ensureStoryPromptExists() {
 }
 
 function storySubmit() {
-	document.activeElement.blur();
-
-	setTimeout(() => {
-		disruptStoryState();
-		const submitData = {'data': document.getElementById('input_text').value, 'theme': document.getElementById('themetext').value};
-		if (document.getElementById("Selected Text").getAttribute("contenteditable") === "false") {
-			ensureStoryPromptExists();
-		}
-		socket.emit('submit', submitData);
-		document.getElementById('input_text').value = '';
-		document.getElementById('themetext').value = '';
-	}, 20);
+	disruptStoryState();
+	const submitData = {'data': document.getElementById('input_text').value, 'theme': document.getElementById('themetext').value};
+	if (document.getElementById("Selected Text").getAttribute("contenteditable") === "false") {
+		ensureStoryPromptExists();
+	}
+	socket.emit('submit', submitData);
+	document.getElementById('input_text').value = '';
+	document.getElementById('themetext').value = '';
 }
 
 function storyBack() {
@@ -594,6 +590,12 @@ function do_story_text_updates(action) {
 			item.classList.remove("action_mode_input");
 		}
 
+		const format = (text) => {
+			if (text.endsWith("\n"))
+				text += "\n";
+			return text;
+		};
+
 		if ('wi_highlighted_text' in action.action) {
 			for (chunk of action.action['wi_highlighted_text']) {
 				chunk_element = document.createElement("span");
@@ -607,7 +609,7 @@ function do_story_text_updates(action) {
 			}
 		} else {
 			chunk_element = document.createElement("span");
-			chunk_element.innerText = action.action['Selected Text'];
+			chunk_element.innerText = format(action.action['Selected Text']);
 			item.append(chunk_element);
 		}
 		item.original_text = action.action['Selected Text'];
@@ -3176,10 +3178,16 @@ function edit_game_text(id) {
 function update_game_text(id) {
 	let temp = null;
 	let new_text = ""
+	const format = (text) => {
+		if (text.endsWith("\n\n"))
+			text = text.substring(0, text.length - 1);
+		return text;
+	};
 	if (id == -1) {
 		temp = document.getElementById("story_prompt");
 		if (!temp) return;
 		new_text = temp.innerText;
+		new_text = format(new_text);
 		sync_to_server(temp);
 		temp.original_text = new_text;
 		temp.classList.add("pulse");
@@ -3187,6 +3195,7 @@ function update_game_text(id) {
 		temp = document.getElementById("Selected Text Chunk " + id);
 		if (temp) {
 			new_text = temp.innerText;
+			new_text = format(new_text);
 			socket.emit("Set Selected Text", {"id": id, "text": new_text});
 			temp.original_text = new_text;
 			temp.classList.add("pulse");
