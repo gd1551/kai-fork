@@ -241,14 +241,18 @@ function ensureStoryPromptExists() {
 }
 
 function storySubmit() {
-	disruptStoryState();
-	const submitData = {'data': document.getElementById('input_text').value, 'theme': document.getElementById('themetext').value};
-	if (document.getElementById("Selected Text").getAttribute("contenteditable") === "false") {
-		ensureStoryPromptExists();
-	}
-	socket.emit('submit', submitData);
-	document.getElementById('input_text').value = '';
-	document.getElementById('themetext').value = '';
+	document.activeElement.blur();
+
+	setTimeout(() => {
+		disruptStoryState();
+		const submitData = {'data': document.getElementById('input_text').value, 'theme': document.getElementById('themetext').value};
+		if (document.getElementById("Selected Text").getAttribute("contenteditable") === "false") {
+			ensureStoryPromptExists();
+		}
+		socket.emit('submit', submitData);
+		document.getElementById('input_text').value = '';
+		document.getElementById('themetext').value = '';
+	}, 10);
 }
 
 function storyBack() {
