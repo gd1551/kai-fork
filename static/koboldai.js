@@ -303,13 +303,13 @@ function reset_story(clearStoryData = true) {
 	}
 	document.getElementById("Selected Text").setAttribute("contenteditable", "false");
 	
-	if (clearStoryData) {
-		//clear any options
-		var option_area = document.getElementById("Select Options");
-		while (option_area.firstChild) {
-			option_area.removeChild(option_area.firstChild);
-		}
-		
+	//clear any options
+	var option_area = document.getElementById("Select Options");
+	while (option_area.firstChild) {
+		option_area.removeChild(option_area.firstChild);
+	}
+
+	if (clearStoryData) {		
 		//clear world info
 		world_info_data = {};
 		world_info_folder({"root": []});
