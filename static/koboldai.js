@@ -73,6 +73,7 @@ var scroll_trigger_element = undefined; //undefined means not currently set. If 
 var drag_id = null;
 var story_commentary_characters = {};
 var generating_summary = false;
+var ai_busy = false;
 const on_colab = $el("#on_colab").textContent == "true";
 let story_id = -1;
 
@@ -754,6 +755,7 @@ function update_status_bar(data) {
 }
 
 function do_ai_busy(data) {
+	ai_busy = data.value;
 	if (data.value) {
 		ai_busy_start = Date.now();
 		favicon.start_swap()
@@ -6467,9 +6469,11 @@ function run_infinite_scroll_update(action_type, actions, first_action) {
 	if (!promptEl) return;
 
 	if (action_type == "append" || action_type == "update") {
-		if (document.getElementById('Selected Text Chunk '+actions[actions.length-1].id)) {
-			document.getElementById('Selected Text Chunk '+actions[actions.length-1].id).scrollIntoView(false);
-			document.getElementById("Selected Text").scrollBy(0, 25);
+		if (ai_busy || actions.length > 1) {
+			if (document.getElementById('Selected Text Chunk '+actions[actions.length-1].id)) {
+				document.getElementById('Selected Text Chunk '+actions[actions.length-1].id).scrollIntoView(false);
+				document.getElementById("Selected Text").scrollBy(0, 25);
+			}
 		}
 		//Check to see if we need to have the scrolling in place or not
 		if (promptEl.classList.contains("hidden")) {
@@ -6491,30 +6495,36 @@ function run_infinite_scroll_update(action_type, actions, first_action) {
 			promptEl.classList.remove("hidden");
 		} else {
 			//we just added more text and didn't hit the prompt. Move the scroll trigger back to the first non-prompt element
+			var last_action = actions[0];
 			let item_in_view = false;
 			if ((scroll_trigger_element != undefined) && (scroll_trigger_element)) {
 				if(scroll_trigger_element.getBoundingClientRect().bottom >= 0){
-					let item_in_view = true;
+					item_in_view = true;
 				}
 			}
 			for (id of Object.keys(actions_data).map(Number).filter(function(x){return x>0}).sort(function(a, b) {return a - b;})) {
-				//console.log("Checking for "+id);
+				// console.log("Checking for "+id);
 				if (document.getElementById('Selected Text Chunk '+id)) {
 					scroll_trigger_element = document.getElementById('Selected Text Chunk '+id);
 					break;
 				}
 			}
-			if (document.getElementById('Selected Text Chunk '+first_action)) {
+			if (document.getElementById('Selected Text Chunk '+last_action)) {
 				if (item_in_view) {
-					document.getElementById('Selected Text Chunk '+first_action).scrollIntoView(true);
+					setTimeout(() => {
+						document.getElementById('Selected Text Chunk '+last_action).scrollIntoView(true);
+					}, 10);
 				}
 			}
-			
 		}
 	}
 	
+	return; // why?
 	if (scroll_trigger_element != undefined) {
-		auto_loader_timeout = setTimeout(function() {socket.emit("get_next_100_actions", parseInt(scroll_trigger_element.getAttribute("chunk")));}, 1000);
+		auto_loader_timeout = setTimeout(function() {
+			if (!scroll_trigger_element) return;
+			socket.emit("get_next_100_actions", parseInt(scroll_trigger_element.getAttribute("chunk")));
+		}, 1000);
 	}
 }
 
