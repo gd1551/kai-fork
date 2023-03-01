@@ -235,24 +235,20 @@ function ensureStoryPromptExists() {
 		elem.id = "story_prompt";
 		document.getElementById("Selected Text").prepend(elem);
 	}
-	for (const _class of ["var_sync_story_prompt","var_sync_alt_story_prompt_in_ai","rawtext","hidden"])
+	for (const _class of ["var_sync_story_prompt","var_sync_alt_story_prompt_in_ai","rawtext"])
 		elem.classList.add(_class);
 	elem.setAttribute("chunk", "-1");
 }
 
 function storySubmit() {
-	document.activeElement.blur();
-
-	setTimeout(() => {
-		disruptStoryState();
-		const submitData = {'data': document.getElementById('input_text').value, 'theme': document.getElementById('themetext').value};
-		if (document.getElementById("Selected Text").getAttribute("contenteditable") === "false") {
-			ensureStoryPromptExists();
-		}
-		socket.emit('submit', submitData);
-		document.getElementById('input_text').value = '';
-		document.getElementById('themetext').value = '';
-	}, 20);
+	disruptStoryState();
+	const submitData = {'data': document.getElementById('input_text').value, 'theme': document.getElementById('themetext').value};
+	if (document.getElementById("Selected Text").getAttribute("contenteditable") === "false") {
+		ensureStoryPromptExists();
+	}
+	socket.emit('submit', submitData);
+	document.getElementById('input_text').value = '';
+	document.getElementById('themetext').value = '';
 }
 
 function storyBack() {
