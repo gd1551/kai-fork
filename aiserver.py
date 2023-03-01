@@ -8711,10 +8711,16 @@ def UI_2_submit(data):
     if not koboldai_vars.noai and data['theme'] != "":
         logger.debug("doing random prompt")
         memory = koboldai_vars.memory
-        koboldai_vars.memory = "{}- Write a story about {}:\n\n".format(koboldai_vars.memory + "\n\n" if koboldai_vars.memory else "", data['theme'])
+        koboldai_vars.memory = "{}- Write a {}story about {}:\n\nPossible story:\n\n".format(
+            koboldai_vars.memory + "\n\n" if koboldai_vars.memory else "",
+            "second person perspective " if koboldai_vars.actionmode == 1 else "",
+            data['theme'])
         koboldai_vars.lua_koboldbridge.feedback = None
         actionsubmit("", force_submit=True, force_prompt_gen=True)
-        koboldai_vars.memory = memory
+        koboldai_vars.memory = ("- Write and continue this {} in a creative way. "
+            "Extend character dialogue and action description with minute details. "
+            "Use excessive and detailed descriptions for every characters actions.\n\n").format(data['theme']) + \
+            memory
     else:
         logger.debug("doing normal input")
         koboldai_vars.actions.clear_unused_options()
