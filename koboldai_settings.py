@@ -337,9 +337,11 @@ class koboldai_vars(object):
         if action_text_split and self.is_chat_v2():
             action_text_split[-1][0] = action_text_split[-1][0].strip() + "\n"
 
-        if action_text_split and len(action_text_split) > 0 and not self.is_chat_v2():
-            if action_text_split[-1][0][-1] == '\n':
-                action_text_split[-1][0] = action_text_split[-1][0][:-1]
+        if action_text_split and not self.is_chat_v2():
+            l = len(action_text_split)
+            for i in range(l):
+                if action_text_split[i][0][-2] == '\n\n' or (i == (l-1) and action_text_split[i][0][-1] == '\n'):
+                    action_text_split[i][0] = action_text_split[i][0][:-1]
         
         ######################################### Prompt ########################################################
         #Add prompt length/text if we're set to always use prompt
