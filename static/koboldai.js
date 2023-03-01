@@ -156,7 +156,10 @@ const shortcuts = [
 	{mod: "ctrl", key: "l", desc: '"Lock" screen (Not secure)', func: () => socket.emit("privacy_mode", {'enabled': true})},
 	{mod: "ctrl", key: "k", desc: "Finder", func: open_finder},
 	{mod: "ctrl", key: "/", desc: "Help screen", func: () => openPopup("shortcuts-popup")},
-	{mod: "ctrl", key: "Enter", desc: "Submit (generate)", func: storySubmit}
+	{mod: "ctrl", key: "Enter", desc: "Submit (generate)", func: () => {
+		if (document.activeElement) document.activeElement.blur();
+		setTimeout(storySubmit, 50);
+	}}
 ]
 
 const chat = {
