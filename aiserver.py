@@ -6162,6 +6162,21 @@ def colab_raw_generate(
                     text = gen
                 tokenized += [tokenizer.encode(text)]
             return np.array(tokenized)
+    else:
+        try:
+            js = req.json()
+            if "statusText" in js:
+                error_message = js["statusText"]
+            else:
+                error_message = "Unknown error"
+        except:
+            error_message = "Malformed response object"
+        errmsg = "Failed to get a reply from the server. Please check the console."
+        print("{0}{1}{2}".format(colors.RED, error_message, colors.END))
+        emit('from_server', {'cmd': 'errmsg', 'data': errmsg}, broadcast=True)
+        emit("error", errmsg, broadcast=True, room="UI_2")
+        set_aibusy(0)
+        return []
 
 def api_raw_generate(
     prompt_tokens: List[int],
