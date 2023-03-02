@@ -340,8 +340,8 @@ class koboldai_vars(object):
         if action_text_split and not self.is_chat_v2():
             l = len(action_text_split)
             for i in range(l):
-                if len(action_text_split[i][0]) > 0 and \
-                        (len(action_text_split[i][0]) >= 2 and action_text_split[i][0][-2:] == '\n\n') \
+                if len(action_text_split[i][0]) > 1 \
+                        and action_text_split[i][0][-2:] == '\n\n' \
                         or (i == (l-1) and action_text_split[i][0][-1] == '\n'):
                     action_text_split[i][0] = action_text_split[i][0][:-1]
         
